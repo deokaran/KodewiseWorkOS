@@ -1,0 +1,8 @@
+{
+    "name": "Studio Track",
+    "description": "Creative Operations Platform for content production agencies.",
+    "requestFramePermissions": [],
+    "majorCapabilities": [
+        "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+    ]
+}

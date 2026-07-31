@@ -1,0 +1,649 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+enum Role {
+  TEAM_LEADER
+  EMPLOYEE
+  COLLABORATOR
+}
+
+enum WorkLocation {
+  IN_OFFICE
+  WORK_FROM_HOME
+}
+
+enum WorkItemType {
+  INTERNAL_EVENT
+  CLIENT_DELIVERABLE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WorkItemStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+  CANCELLED
+}
+
+enum StageStatus {
+  LOCKED
+  READY
+  IN_PROGRESS
+  SUBMITTED
+  TL_REVIEW_PENDING
+  CLIENT_ACCEPTANCE_PENDING
+  REVISION_REQUESTED
+  REJECTED
+  APPROVED
+  COMPLETED
+  ON_HOLD
+  SKIPPED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATED
+  ASSIGNED
+  STARTED
+  SUBMITTED
+  TL_APPROVED
+  TL_REJECTED
+  CLIENT_ACCEPTED_BY_TL
+  DEADLINE_CHANGED
+  ASSIGNEE_CHANGED
+  COMMENT_ADDED
+  FILE_UPLOADED
+  STAGE_COMPLETED
+  SKIPPED
+  CANCELLED
+  WORK_ARCHIVED
+}
+
+enum NotificationType {
+  ASSIGNMENT
+  STAGE_READY
+  APPROVAL_REQUIRED
+  TL_APPROVED
+  TL_REJECTED
+  CLIENT_ACCEPTED_BY_TL
+  REVISION_REQUESTED
+  DEADLINE_REMINDER
+  OVERDUE
+  SYSTEM_ALERT
+}
+
+enum NotificationEntityType {
+  WORK_ITEM
+  WORK_ITEM_STAGE
+  COMMENT
+  CALENDAR_EVENT
+  PROCESS
+}
+
+enum StorageProvider {
+  GOOGLE_DRIVE
+  AWS_S3
+  LOCAL
+}
+
+enum TagType {
+  BRAND
+  CLIENT_TYPE
+  WORK_TYPE
+  STATUS
+  CUSTOM
+}
+
+// -----------------------------------------------------------------------------
+// CONFIGURATION & MASTER TABLES
+// -----------------------------------------------------------------------------
+model Capability {
+  id             String                 @id @default(uuid())
+  name           String
+  users          User[]                 
+  stageTemplates ProcessStageTemplate[]
+  workItemStages WorkItemStage[]
+}
+
+model Tag {
+  id                  String         @id @default(uuid())
+  name                String
+  color               String?
+  icon                String?
+  type                TagType        @default(CUSTOM)
+  
+  brandSequence       BrandSequence?
+  primaryBrandItems   WorkItem[]     @relation("PrimaryBrand")
+  
+  clients             ClientTag[]
+  workItems           WorkItemTag[]
+  brandUsers          User[]         @relation("UserBrand")
+  
+  deletedAt           DateTime?
+  createdAt           DateTime       @default(now())
+}
+
+model BrandSequence {
+  id         String @id @default(uuid())
+  tagId      String @unique
+  tag        Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  prefix     String @unique // e.g., "FC", "KW"
+  lastNumber Int    @default(0)
+}
+
+model WorkType {
+  id             String     @id @default(uuid())
+  name           String
+  isDeliverable  Boolean    @default(false)
+  workItems      WorkItem[]
+}
+
+model EventType {
+  id        String          @id @default(uuid())
+  name      String
+  color     String?
+  events    CalendarEvent[]
+}
+
+// -----------------------------------------------------------------------------
+// INTERNAL USERS
+// -----------------------------------------------------------------------------
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  name             String
+  password         String?         // Added for Auth.js Credentials provider
+  role             Role
+  roles            Role[]          @default([EMPLOYEE])
+  capabilities     Capability[]      
+  
+  brandId          String?
+  brand            Tag?            @relation("UserBrand", fields: [brandId], references: [id])
+  
+  personalEmail    String?
+  mobileNumber     String?
+  aadhaarNumber    String?
+  dob              DateTime?
+  photo            Bytes?
+  photoMimeType    String?
+  aadhaarPhoto     Bytes?
+  aadhaarPhotoMimeType String?
+  
+  departmentId     String?
+  department       Department?     @relation(fields: [departmentId], references: [id])
+  
+  profileDraft             ProfileDraft?   @relation("UserDraft")
+  attendanceRequests       AttendanceRequest[]
+  reminders                Reminder[]
+  leaveRequests            LeaveRequest[]
+  
+  allowedPaid              Int             @default(12)
+  allowedCasual            Int             @default(8)
+  allowedSick              Int             @default(10)
+  usedPaid                 Int             @default(0)
+  usedCasual               Int             @default(0)
+  usedSick                 Int             @default(0)
+  consecutivePunctualDays  Int             @default(0)
+  lastPunctualCheckIn      DateTime?
+
+  assignedStages   WorkItemStage[]
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  comments         Comment[]
+  attachments      Attachment[]
+  attendances      Attendance[]
+  collaborations   Collaboration[] @relation("UserCollaborations")
+  
+  createdWorkItems WorkItem[]      @relation("WorkItemCreator")
+  updatedWorkItems WorkItem[]      @relation("WorkItemUpdater")
+  
+  deletedAt        DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// TAGGING JOIN TABLES
+// -----------------------------------------------------------------------------
+model ClientTag {
+  clientId String
+  tagId    String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, tagId])
+}
+
+model WorkItemTag {
+  workItemId String
+  tagId      String
+  workItem   WorkItem @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([workItemId, tagId])
+}
+
+// -----------------------------------------------------------------------------
+// CLIENTS & QUOTAS (BUSINESS ENTITIES ONLY)
+// -----------------------------------------------------------------------------
+model Client {
+  id             String       @id @default(uuid())
+  clientCode     String       @default("")
+  name           String
+  description    String?
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  website        String?
+  notes          String?
+  isActive       Boolean      @default(true)
+  tags           ClientTag[]
+  workItems      WorkItem[]
+  contracts      Contract[]
+  
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+}
+
+model Contract {
+  id            String       @id @default(uuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id])
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean      @default(true)
+  monthlyTarget Int          
+  notes         String?
+  quotaMonths   QuotaMonth[]
+}
+
+model QuotaMonth {
+  id              String      @id @default(uuid())
+  contractId      String
+  contract        Contract    @relation(fields: [contractId], references: [id])
+  periodYearMonth String      
+  monthlyTarget   Int
+  carriedOver     Int         @default(0)
+  totalTarget     Int         
+  deliveredCount  Int         @default(0)
+  quotaWeeks      QuotaWeek[]
+}
+
+model QuotaWeek {
+  id             String     @id @default(uuid())
+  quotaMonthId   String
+  quotaMonth     QuotaMonth @relation(fields: [quotaMonthId], references: [id])
+  weekNumber     Int
+  weeklyTarget   Int
+  deliveredCount Int        @default(0)
+}
+
+// -----------------------------------------------------------------------------
+// PROCESS TEMPLATES
+// -----------------------------------------------------------------------------
+model ProcessTemplate {
+  id          String                   @id @default(uuid())
+  name        String
+  description String?
+  versions    ProcessTemplateVersion[]
+  
+  deletedAt   DateTime?
+  createdAt   DateTime                 @default(now())
+}
+
+model ProcessTemplateVersion {
+  id          String                 @id @default(uuid())
+  templateId  String
+  template    ProcessTemplate        @relation(fields: [templateId], references: [id])
+  version     Int
+  isPublished Boolean                @default(false)
+  stages      ProcessStageTemplate[]
+  workItems   WorkItem[]             
+  
+  deletedAt   DateTime?
+  createdAt   DateTime               @default(now())
+}
+
+model ProcessStageTemplate {
+  id                             String                 @id @default(uuid())
+  versionId                      String
+  version                        ProcessTemplateVersion @relation(fields: [versionId], references: [id])
+  name                           String
+  order                          Int
+  capabilityId                   String?
+  capability                     Capability?            @relation(fields: [capabilityId], references: [id])
+  estimatedDurationMins          Int
+  instructions                   String?
+  requiresTLApproval             Boolean                @default(false)
+  requiresManualClientAcceptance Boolean                @default(false)
+  isDefaultOpenPool              Boolean                @default(false)
+  deadlineRule                   Json?                  
+  stages                         WorkItemStage[]
+}
+
+// -----------------------------------------------------------------------------
+// WORK ITEMS & STAGES
+// -----------------------------------------------------------------------------
+model WorkItem {
+  id               String                 @id @default(uuid())
+  workNumber       String                 @unique // e.g., "FC-000001"
+  title            String
+  description      String?
+  type             WorkItemType
+  status           WorkItemStatus         @default(ACTIVE)
+  priority         Priority               @default(MEDIUM)
+  
+  primaryBrandTagId String
+  primaryBrandTag  Tag                    @relation("PrimaryBrand", fields: [primaryBrandTagId], references: [id])
+  
+  clientId         String?                
+  client           Client?                @relation(fields: [clientId], references: [id])
+  workTypeId       String?
+  workType         WorkType?              @relation(fields: [workTypeId], references: [id])
+  
+  processVersionId String
+  processVersion   ProcessTemplateVersion @relation(fields: [processVersionId], references: [id])
+  tags             WorkItemTag[]               
+  
+  parentId         String?
+  parent           WorkItem?              @relation("WorkItemLineage", fields: [parentId], references: [id])
+  children         WorkItem[]             @relation("WorkItemLineage")
+
+  // Fast-access for dashboards
+  currentStageId   String?                @unique
+  currentStage     WorkItemStage?         @relation("CurrentStage", fields: [currentStageId], references: [id])
+  
+  // Analytics & Planning
+  estimatedStart   DateTime?
+  estimatedEnd     DateTime?
+  actualStart      DateTime?
+  actualEnd        DateTime?
+  delayMins        Int?                   @default(0)
+  
+  // Metadata & Audit
+  createdById      String
+  createdBy        User                   @relation("WorkItemCreator", fields: [createdById], references: [id])
+  updatedById      String?
+  updatedBy        User?                  @relation("WorkItemUpdater", fields: [updatedById], references: [id])
+  
+  statusChangedAt  DateTime               @default(now())
+  lastActivityAt   DateTime               @default(now())
+  
+  stages           WorkItemStage[]        @relation("AllStages")
+  auditLogs        AuditLog[]
+  comments         Comment[]
+  attachments      Attachment[]
+  
+  deletedAt        DateTime?
+  createdAt        DateTime               @default(now())
+}
+
+model WorkItemStage {
+  id                 String               @id @default(uuid())
+  workItemId         String
+  workItem           WorkItem             @relation("AllStages", fields: [workItemId], references: [id], onDelete: Cascade)
+  currentForWorkItem WorkItem?            @relation("CurrentStage")
+  
+  stageTemplateId    String
+  stageTemplate      ProcessStageTemplate @relation(fields: [stageTemplateId], references: [id])
+  status             StageStatus          @default(LOCKED)
+  
+  assignedUserId     String?
+  assignedUser       User?                @relation(fields: [assignedUserId], references: [id])
+  capabilityId       String?
+  capability         Capability?          @relation(fields: [capabilityId], references: [id])
+  isPoolItem         Boolean              @default(false)
+  
+  deadline           DateTime?
+  startedAt          DateTime?
+  submittedAt        DateTime?
+  completedAt        DateTime?
+  statusChangedAt    DateTime             @default(now())
+  
+  comments           Comment[]
+  attachments        Attachment[]
+  
+  deletedAt          DateTime?
+}
+
+// -----------------------------------------------------------------------------
+// FILES & COMMENTS
+// -----------------------------------------------------------------------------
+model Comment {
+  id              String         @id @default(uuid())
+  content         String
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  
+  parentCommentId String?
+  parentComment   Comment?       @relation("ThreadedComments", fields: [parentCommentId], references: [id])
+  replies         Comment[]      @relation("ThreadedComments")
+  
+  workItemId      String
+  workItem        WorkItem       @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItemStageId String?
+  workItemStage   WorkItemStage? @relation(fields: [workItemStageId], references: [id], onDelete: Cascade)
+  
+  deletedAt       DateTime?
+  createdAt       DateTime       @default(now())
+}
+
+model Attachment {
+  id              String           @id @default(uuid())
+  fileName        String
+  fileUrl         String?        
+  
+  storageProvider StorageProvider? @default(GOOGLE_DRIVE)
+  providerFileId  String?
+  folderId        String?
+  mimeType        String?
+  fileSize        Int?
+  
+  userId          String
+  user            User             @relation(fields: [userId], references: [id])
+  workItemId      String
+  workItem        WorkItem         @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  workItemStageId String?
+  workItemStage   WorkItemStage?   @relation(fields: [workItemStageId], references: [id], onDelete: Cascade)
+  
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+}
+
+// -----------------------------------------------------------------------------
+// AUDIT LOG & NOTIFICATIONS
+// -----------------------------------------------------------------------------
+model AuditLog {
+  id         String      @id @default(uuid())
+  action     AuditAction
+  workItemId String
+  workItem   WorkItem    @relation(fields: [workItemId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id])
+  metadata   Json?       
+  createdAt  DateTime    @default(now())
+}
+
+model Notification {
+  id         String                  @id @default(uuid())
+  userId     String
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  
+  entityType NotificationEntityType?
+  entityId   String?                 // UUID of the referenced entity
+  
+  isRead     Boolean                 @default(false)
+  readAt     DateTime?
+  
+  title      String
+  body       String
+  link       String?          
+  emailSent  Boolean                 @default(false)
+  createdAt  DateTime                @default(now())
+
+  @@index([userId, isRead])
+}
+
+// -----------------------------------------------------------------------------
+// EVENT ENGINE
+// -----------------------------------------------------------------------------
+model CalendarEvent {
+  id                 String     @id @default(uuid())
+  title              String
+  startTime          DateTime
+  endTime            DateTime
+  timezone           String?
+  isRecurring        Boolean    @default(false)
+  recurrenceRule     String?    // e.g., RRULE:FREQ=WEEKLY
+  
+  eventTypeId        String?
+  eventType          EventType? @relation(fields: [eventTypeId], references: [id])
+  
+  processTemplateId  String?  
+  metadata           Json?    
+  createdAt          DateTime   @default(now())
+}
+
+model Attendance {
+  id           String       @id @default(uuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clockIn      DateTime     @default(now())
+  clockOut     DateTime?
+  workLocation WorkLocation @default(IN_OFFICE)
+  createdAt    DateTime     @default(now())
+  
+  requests     AttendanceRequest[]
+
+  @@index([userId])
+}
+
+model Collaboration {
+  id                  String   @id @default(uuid())
+  clientName          String
+  date                DateTime
+  paymentType         String
+  amount              Float
+  proofImage          Bytes
+  proofImageMimeType  String?
+  published           Boolean  @default(false)
+  publishLink         String?
+  userId              String?
+  user                User?    @relation("UserCollaborations", fields: [userId], references: [id])
+  createdAt           DateTime @default(now())
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+}
+
+model ProfileDraft {
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation("UserDraft", fields: [userId], references: [id], onDelete: Cascade)
+  name                  String?
+  personalEmail         String?
+  mobileNumber          String?
+  aadhaarNumber         String?
+  dob                   DateTime?
+  photo                 Bytes?
+  photoMimeType         String?
+  aadhaarPhoto          Bytes?
+  aadhaarPhotoMimeType  String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @default(now()) @updatedAt
+}
+
+enum AttendanceRequestType {
+  CREATE
+  UPDATE
+}
+
+enum AttendanceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model AttendanceRequest {
+  id             String                  @id @default(uuid())
+  userId         String
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendanceId   String?                 
+  attendance     Attendance?             @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  type           AttendanceRequestType
+  clockIn        DateTime
+  clockOut       DateTime?
+  workLocation   WorkLocation            @default(IN_OFFICE)
+  status         AttendanceRequestStatus @default(PENDING)
+  reason         String?                 
+  createdAt      DateTime                @default(now())
+
+  @@index([userId])
+}
+
+enum LeaveType {
+  PAID
+  CASUAL
+  SICK
+}
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Holiday {
+  id        String   @id @default(uuid())
+  title     String
+  date      DateTime @unique
+  createdAt DateTime @default(now())
+}
+
+model LeaveRequest {
+  id          String             @id @default(uuid())
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        LeaveType
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveRequestStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+
+  @@index([userId])
+}
+
+model Reminder {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  date        DateTime
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
