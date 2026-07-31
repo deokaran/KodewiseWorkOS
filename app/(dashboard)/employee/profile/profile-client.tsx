@@ -38,6 +38,7 @@ export function ProfileClient({ user, draft, isTl }: ProfileClientProps) {
 
   const [formData, setFormData] = useState({
     name: user.name || "",
+    email: user.email || "",
     personalEmail: user.personalEmail || "",
     mobileNumber: user.mobileNumber || "",
     aadhaarNumber: user.aadhaarNumber || "",
@@ -118,6 +119,7 @@ export function ProfileClient({ user, draft, isTl }: ProfileClientProps) {
             </p>
             <div className="mt-2 text-xs border-t border-amber-100 pt-2 flex flex-wrap gap-x-4 gap-y-1 text-amber-800">
               {draft.name && <span>• Name: <strong className="underline">{draft.name}</strong></span>}
+              {draft.email && <span>• Official Email: <strong className="underline">{draft.email}</strong></span>}
               {draft.personalEmail && <span>• Personal Email: <strong className="underline">{draft.personalEmail}</strong></span>}
               {draft.mobileNumber && <span>• Mobile: <strong className="underline">{draft.mobileNumber}</strong></span>}
               {draft.dob && <span>• DOB: <strong className="underline">{new Date(draft.dob).toLocaleDateString()}</strong></span>}
@@ -185,7 +187,12 @@ export function ProfileClient({ user, draft, isTl }: ProfileClientProps) {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-medium">Official Email</p>
-                    <p className="font-semibold text-gray-900">{user.email}</p>
+                    <p className="font-semibold text-gray-900">
+                      {draft?.email
+                        ? <span className="text-amber-700 underline font-bold">{draft.email} (Pending)</span>
+                        : user.email
+                      }
+                    </p>
                   </div>
                 </div>
 
@@ -356,13 +363,25 @@ export function ProfileClient({ user, draft, isTl }: ProfileClientProps) {
               Modifying these fields submits a request draft for Team Leader approval. Your public profile will update once approved.
             </p>
 
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Official Email</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

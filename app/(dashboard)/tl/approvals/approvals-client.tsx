@@ -229,6 +229,14 @@ export function ApprovalsClient({
                         </div>
                       )}
 
+                      {draft.email && (
+                        <div className="border p-3 rounded-xl bg-white space-y-1">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Official Email</p>
+                          <p className="font-semibold text-gray-900">{draft.email}</p>
+                          <p className="text-[10px] text-slate-400">Current: {draft.user.email}</p>
+                        </div>
+                      )}
+
                       {draft.personalEmail && (
                         <div className="border p-3 rounded-xl bg-white space-y-1">
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Personal Email</p>

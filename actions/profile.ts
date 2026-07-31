@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 export async function submitProfileDraftAction(data: {
   name?: string;
+  email?: string;
   personalEmail?: string;
   mobileNumber?: string;
   aadhaarNumber?: string;
@@ -32,6 +33,7 @@ export async function submitProfileDraftAction(data: {
 
     await ProfileDraftService.submitDraft(authUser.id, {
       name: data.name,
+      email: data.email,
       personalEmail: data.personalEmail,
       mobileNumber: data.mobileNumber,
       aadhaarNumber: data.aadhaarNumber,

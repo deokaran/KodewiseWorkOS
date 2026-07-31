@@ -13,6 +13,7 @@ export class ProfileDraftService {
 
   static async submitDraft(userId: string, data: {
     name?: string | null;
+    email?: string | null;
     personalEmail?: string | null;
     mobileNumber?: string | null;
     aadhaarNumber?: string | null;
@@ -30,6 +31,7 @@ export class ProfileDraftService {
       create: {
         userId,
         name: data.name,
+        email: data.email,
         personalEmail: data.personalEmail,
         mobileNumber: data.mobileNumber,
         aadhaarNumber: data.aadhaarNumber,
@@ -41,6 +43,7 @@ export class ProfileDraftService {
       },
       update: {
         name: data.name !== undefined ? data.name : undefined,
+        email: data.email !== undefined ? data.email : undefined,
         personalEmail: data.personalEmail !== undefined ? data.personalEmail : undefined,
         mobileNumber: data.mobileNumber !== undefined ? data.mobileNumber : undefined,
         aadhaarNumber: data.aadhaarNumber !== undefined ? data.aadhaarNumber : undefined,
@@ -59,6 +62,7 @@ export class ProfileDraftService {
     ]);
     const changedFields: string[] = [];
     if (data.name) changedFields.push("Name");
+    if (data.email) changedFields.push("Official Email");
     if (data.personalEmail) changedFields.push("Personal Email");
     if (data.mobileNumber) changedFields.push("Mobile Number");
     if (data.aadhaarNumber) changedFields.push("Aadhaar Number");
@@ -80,6 +84,7 @@ export class ProfileDraftService {
 
     const updateData: any = {};
     if (draft.name !== null) updateData.name = draft.name;
+    if (draft.email !== null) updateData.email = draft.email;
     if (draft.personalEmail !== null) updateData.personalEmail = draft.personalEmail;
     if (draft.mobileNumber !== null) updateData.mobileNumber = draft.mobileNumber;
     if (draft.aadhaarNumber !== null) updateData.aadhaarNumber = draft.aadhaarNumber;
@@ -93,21 +98,22 @@ export class ProfileDraftService {
       updateData.aadhaarPhotoMimeType = draft.aadhaarPhotoMimeType;
     }
 
-    return prisma.$transaction(async (tx) => {
-      await tx.user.update({
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
         where: { id: userId },
         data: updateData
       });
 
       await tx.profileDraft.delete({ where: { userId } });
+      return u;
     });
 
-    // Email the employee (best-effort)
-    const empForEmail = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
-    if (empForEmail?.email) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      EmailService.sendProfileDraftApproved({ recipientEmail: empForEmail!.email, recipientName: empForEmail!.name });
+    // Email the employee (sent on official email)
+    if (updatedUser?.email) {
+      EmailService.sendProfileDraftApproved({ recipientEmail: updatedUser.email, recipientName: updatedUser.name });
     }
+
+    return updatedUser;
   }
 
   static async rejectDraft(userId: string) {
@@ -116,9 +122,9 @@ export class ProfileDraftService {
 
     await prisma.profileDraft.delete({ where: { userId } });
 
-    // Email the employee
+    // Email the employee (sent on official email)
     const emp2 = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
-    if (emp2 != null) {
+    if (emp2 != null && emp2.email) {
       EmailService.sendProfileDraftRejected({ recipientEmail: emp2.email, recipientName: emp2.name });
     }
   }

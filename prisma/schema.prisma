@@ -563,6 +563,7 @@ model ProfileDraft {
   userId                String    @unique
   user                  User      @relation("UserDraft", fields: [userId], references: [id], onDelete: Cascade)
   name                  String?
+  email                 String?
   personalEmail         String?
   mobileNumber          String?
   aadhaarNumber         String?
