@@ -4,12 +4,15 @@ import { WorkItemService } from "@/services/WorkItemService";
 import { TagService } from "@/services/TagService";
 import { ClientService } from "@/services/ClientService";
 import { WorkTypeService } from "@/services/WorkTypeService";
+import { ProcessTemplateService } from "@/services/ProcessTemplateService";
+import { UserService } from "@/services/UserService";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkHeader } from "./work-header";
 import { StageActionButtons } from "./stage-action-buttons";
 import { StageProgress } from "./stage-progress";
 import { getSessionUser } from "@/lib/auth/utils";
+import { formatDateTime } from "@/lib/utils";
 
 export default async function WorkItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,11 +23,15 @@ export default async function WorkItemDetailPage({ params }: { params: Promise<{
     notFound();
   }
 
-  const [tags, clients, workTypes] = await Promise.all([
+  const [tags, clients, workTypes, processes, employees] = await Promise.all([
     TagService.list(),
     ClientService.list(),
-    WorkTypeService.list()
+    WorkTypeService.list(),
+    ProcessTemplateService.list(),
+    UserService.list()
   ]);
+
+  const publishedProcesses = processes.filter((p: any) => p.versions.some((v: any) => v.isPublished));
 
   return (
     <div className="space-y-6">
@@ -39,6 +46,9 @@ export default async function WorkItemDetailPage({ params }: { params: Promise<{
         tags={tags} 
         clients={clients} 
         workTypes={workTypes} 
+        processes={publishedProcesses}
+        employees={employees}
+        currentUser={user}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,12 +102,18 @@ export default async function WorkItemDetailPage({ params }: { params: Promise<{
 
         <div className="space-y-6">
           <StageProgress workItem={workItem} />
-          
           <Card>
             <CardHeader>
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Created At</h4>
+                <p className="mt-1 text-sm font-semibold text-indigo-900">
+                  {formatDateTime(workItem.createdAt)}
+                </p>
+              </div>
+
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Description</h4>
                 <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{workItem.description || 'No description provided.'}</p>

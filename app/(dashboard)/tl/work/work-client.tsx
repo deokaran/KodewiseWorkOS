@@ -9,6 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkFormDialog } from "./work-form-dialog";
 
+import { formatDateTime } from "@/lib/utils";
+
 export function WorkClient({ initialWorkItems, tags, clients, workTypes, processes, employees, currentUser }: any) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -61,6 +63,7 @@ export function WorkClient({ initialWorkItems, tags, clients, workTypes, process
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Process</TableHead>
+              <TableHead>Created At</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,6 +95,9 @@ export function WorkClient({ initialWorkItems, tags, clients, workTypes, process
                 </TableCell>
                 <TableCell className="text-sm text-gray-500">
                   {item.processVersion.template.name} v{item.processVersion.version}
+                </TableCell>
+                <TableCell className="text-xs text-gray-500 font-medium">
+                  {formatDateTime(item.createdAt)}
                 </TableCell>
               </TableRow>
             ))}

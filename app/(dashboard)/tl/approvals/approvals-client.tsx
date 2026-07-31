@@ -168,15 +168,15 @@ export function ApprovalsClient({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="profiles" className="w-full">
-        <TabsList className="bg-slate-100 border p-7 rounded-xl w-full overflow-x-auto flex whitespace-nowrap scrollbar-none justify-start sm:w-auto">
+        <TabsList className="bg-slate-100 border p-7 rounded-xl w-full overflow-x-auto flex whitespace-nowrap scrollbar-none justify-start sm:w-auto overflow-hidden">
           <TabsTrigger value="profiles" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-5">
-            Profile Drafts ({initialDrafts.length})
+            Profile <br /> Drafts ({initialDrafts.length})
           </TabsTrigger>
           <TabsTrigger value="attendance" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-5">
-            Attendance Requests ({initialAttendanceRequests.length})
+            Attendance <br /> Requests ({initialAttendanceRequests.length})
           </TabsTrigger>
           <TabsTrigger value="leaves" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm py-5">
-            Leave Requests ({initialLeaveRequests.length})
+            Leave <br /> Requests ({initialLeaveRequests.length})
           </TabsTrigger>
         </TabsList>
 

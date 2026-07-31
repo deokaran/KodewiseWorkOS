@@ -8,6 +8,10 @@ import { StageProgress } from "../../../tl/work/[id]/stage-progress";
 import { getSessionUser } from "@/lib/auth/utils";
 import { prisma } from "@/lib/db/prisma";
 
+import { createGoogleCalendarUrl } from "@/lib/gcal";
+
+import { formatDateTime } from "@/lib/utils";
+
 export default async function EmployeeWorkItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await getSessionUser();
@@ -38,6 +42,13 @@ export default async function EmployeeWorkItemDetailPage({ params }: { params: P
     }
   }
 
+  const gcalUrl = createGoogleCalendarUrl({
+    title: `[${workItem.workNumber}] ${workItem.title}`,
+    description: `Work Item: ${workItem.workNumber} - ${workItem.title}\nBrand: ${workItem.primaryBrandTag?.name}\nPriority: ${workItem.priority}`,
+    startDate: workItem.estimatedEnd ? new Date(workItem.estimatedEnd) : new Date(),
+    endDate: workItem.estimatedEnd ? new Date(workItem.estimatedEnd) : null,
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -55,6 +66,17 @@ export default async function EmployeeWorkItemDetailPage({ params }: { params: P
             <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">{workItem.status}</Badge>
             <Badge variant={workItem.priority === 'CRITICAL' ? 'destructive' : 'secondary'}>{workItem.priority}</Badge>
           </div>
+        </div>
+
+        <div>
+          <a
+            href={gcalUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition shadow-sm"
+          >
+            <span>📅 Add to Google Calendar</span>
+          </a>
         </div>
       </div>
 
@@ -115,6 +137,13 @@ export default async function EmployeeWorkItemDetailPage({ params }: { params: P
               <CardTitle>Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Created At</h4>
+                <p className="mt-1 text-sm font-semibold text-indigo-900">
+                  {formatDateTime(workItem.createdAt)}
+                </p>
+              </div>
+
               <div>
                 <h4 className="text-sm font-medium text-gray-500">Description</h4>
                 <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{workItem.description || 'No description provided.'}</p>

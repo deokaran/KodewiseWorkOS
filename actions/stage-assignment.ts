@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db/prisma";
 import { revalidatePath } from "next/cache";
 import { formatError } from "@/lib/utils";
 
+import { EmailService } from "@/services/EmailService";
+
 export async function assignStageToUserAction(stageId: string, userId: string) {
   try {
     await requireRole("TEAM_LEADER");
@@ -15,8 +17,23 @@ export async function assignStageToUserAction(stageId: string, userId: string) {
         assignedUserId: userId,
         statusChangedAt: new Date()
       },
-      include: { workItem: true }
+      include: { 
+        workItem: true,
+        assignedUser: true,
+        stageTemplate: true
+      }
     });
+
+    if (stage.assignedUser?.email) {
+      EmailService.sendStageAssigned({
+        recipientEmail: stage.assignedUser.email,
+        recipientName: stage.assignedUser.name,
+        stageName: stage.stageTemplate.name,
+        workNumber: stage.workItem.workNumber,
+        workTitle: stage.workItem.title,
+        workItemId: stage.workItemId,
+      });
+    }
 
     revalidatePath("/tl/team");
     revalidatePath(`/tl/team/${userId}`);

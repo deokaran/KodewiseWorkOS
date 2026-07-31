@@ -20,7 +20,8 @@ export default async function TlKwTeamPage() {
     tags,
     clients,
     workTypes,
-    processes
+    processes,
+    departments
   ] = await Promise.all([
     UserService.list(),
     CapabilityService.list(),
@@ -44,7 +45,8 @@ export default async function TlKwTeamPage() {
     TagService.list(),
     ClientService.list(),
     WorkTypeService.list(),
-    ProcessTemplateService.list()
+    ProcessTemplateService.list(),
+    prisma.department.findMany({ orderBy: { name: "asc" } })
   ]);
 
   const filteredUsers = users.filter((u: any) => u.brand?.name === "Kodewise");
@@ -69,6 +71,7 @@ export default async function TlKwTeamPage() {
         workTypes={sanitizeForClient(workTypes)}
         processes={sanitizeForClient(publishedProcesses)}
         currentUserId={user.id}
+        departments={sanitizeForClient(departments)}
       />
     </div>
   );

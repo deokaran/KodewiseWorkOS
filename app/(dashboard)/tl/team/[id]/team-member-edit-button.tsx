@@ -15,7 +15,7 @@ export function TeamMemberEditButton({ employee, allCapabilities = [], allBrands
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const initialCaps = employee.capabilities.map((c: any) => c.id || c.name);
+  const initialCaps = (employee.capabilities || []).map((c: any) => c.id || c.name);
 
   const [formData, setFormData] = useState<{
     name: string;

@@ -170,6 +170,31 @@ export class UserService {
       }
     }
 
+    const profileChanges: string[] = [];
+    if (data.name && data.name !== user.name) profileChanges.push("Full Name");
+    if (data.email && data.email !== user.email) profileChanges.push("Official Email");
+    if (data.brandId !== undefined && data.brandId !== user.brandId) profileChanges.push("Brand Space");
+    if (data.departmentId !== undefined && data.departmentId !== user.departmentId) profileChanges.push("Department");
+
+    if (profileChanges.length > 0) {
+      try {
+        EmailService.sendUserProfileUpdated({
+          recipientEmail: updated.email,
+          recipientName: updated.name,
+          updatedFields: profileChanges
+        });
+        if (data.email && data.email !== user.email && user.email) {
+          EmailService.sendUserProfileUpdated({
+            recipientEmail: user.email,
+            recipientName: user.name,
+            updatedFields: ["Official Email Address Updated"]
+          });
+        }
+      } catch (err) {
+        console.error("Failed to send profile update email:", err);
+      }
+    }
+
     return updated;
   }
 

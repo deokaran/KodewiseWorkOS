@@ -13,7 +13,7 @@ export default async function TlFcWorkPage() {
     ClientService.list(),
     WorkTypeService.list(),
     ProcessTemplateService.list(),
-    UserService.listByRole("EMPLOYEE")
+    UserService.list()
   ]);
 
   const publishedProcesses = processes.filter(p => p.versions.some(v => v.isPublished));

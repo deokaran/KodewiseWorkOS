@@ -245,7 +245,7 @@ export default async function TLTeamMemberDetailPage({ params }: { params: Promi
           </div>
 
           {/* Activity Log Audit */}
-          <div className="bg-white border border-gray-200/80 rounded-xl overflow-hidden">
+          {/* <div className="bg-white border border-gray-200/80 rounded-xl overflow-hidden">
             <div className="border-b px-6 py-4 bg-gray-50">
               <h3 className="font-semibold text-gray-900">Recent Audit History</h3>
             </div>
@@ -275,7 +275,7 @@ export default async function TLTeamMemberDetailPage({ params }: { params: Promi
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

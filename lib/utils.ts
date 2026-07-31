@@ -72,4 +72,18 @@ export function sanitizeForClient<T>(obj: T): T {
   return obj;
 }
 
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 

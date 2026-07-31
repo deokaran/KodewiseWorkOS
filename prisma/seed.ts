@@ -327,7 +327,6 @@ async function main() {
   })
   console.log('Sample ProcessTemplate seeded.')
 
-  // 9. General Task (No Process) Template
   await prisma.processTemplate.create({
     data: {
       name: 'General Task (No Process)',

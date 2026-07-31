@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import { createGoogleCalendarUrl } from "@/lib/gcal";
+import { formatDateTime } from "@/lib/utils";
 
 function createTransport() {
   return nodemailer.createTransport({
@@ -71,7 +73,8 @@ function row(label: string, value: string): string {
 const TABLE_OPEN = `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 20px; margin: 20px 0; border-collapse: collapse;">`;
 const TABLE_CLOSE = `</table>`;
 
-const BTN_STYLE = `display: inline-block; margin-top: 12px; padding: 12px 28px; background-color: #046CB7; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;`;
+const BTN_STYLE = `display: inline-block; margin-top: 12px; padding: 12px 24px; background-color: #046CB7; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;`;
+const BTN_GCAL_STYLE = `display: inline-block; margin-top: 12px; margin-left: 8px; padding: 12px 24px; background-color: #4285F4; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;`;
 
 const BADGE_BLUE = `<span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background-color: #e0f2fe; color: #046CB7;">`;
 const BADGE_GREEN = `<span style="display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background-color: #d1fae5; color: #065f46;">`;
@@ -103,7 +106,16 @@ export class EmailService {
   static async sendWorkItemCreated(opts: {
     recipientEmail: string; recipientName: string;
     workNumber: string; title: string; brand: string; priority: string; workItemId: string;
+    createdAt?: Date | string | null; estimatedEnd?: Date | string | null; assignorEmail?: string | null;
   }) {
+    const gcalUrl = createGoogleCalendarUrl({
+      title: `[${opts.workNumber}] ${opts.title}`,
+      description: `Work Item ${opts.workNumber} created in ${opts.brand}. Priority: ${opts.priority}.\nView details: ${BASE_URL}/tl/work/${opts.workItemId}`,
+      startDate: opts.estimatedEnd ? new Date(opts.estimatedEnd) : new Date(),
+      endDate: opts.estimatedEnd ? new Date(opts.estimatedEnd) : null,
+      attendees: [opts.recipientEmail, opts.assignorEmail]
+    });
+
     const html = layout("New Work Item Created", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
       <p style="margin: 0 0 16px;">A new work item has been created and is now in your workspace.</p>
@@ -112,8 +124,12 @@ export class EmailService {
         ${row("Title", opts.title)}
         ${row("Brand", opts.brand)}
         ${row("Priority", opts.priority)}
+        ${row("Created At", formatDateTime(opts.createdAt || new Date()))}
       ${TABLE_CLOSE}
-      <a href="${BASE_URL}/tl/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
+      <div>
+        <a href="${BASE_URL}/tl/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
+        <a href="${gcalUrl}" target="_blank" style="${BTN_GCAL_STYLE}"> Add to Google Calendar &rarr;</a>
+      </div>
     `);
     await this.send(opts.recipientEmail, `New Work Item: ${opts.workNumber} — ${opts.title}`, html);
   }
@@ -122,29 +138,42 @@ export class EmailService {
   static async sendStageAssigned(opts: {
     recipientEmail: string; recipientName: string;
     stageName: string; workNumber: string; workTitle: string; workItemId: string;
+    createdAt?: Date | string | null; deadline?: Date | string | null; assignorEmail?: string | null;
   }) {
-    const html = layout("Stage Assigned to You", `
+    const gcalUrl = createGoogleCalendarUrl({
+      title: `[${opts.workNumber}] ${opts.stageName}`,
+      description: `Task "${opts.stageName}" assigned for Work Item ${opts.workNumber} - ${opts.workTitle}.\nView details: ${BASE_URL}/employee/work/${opts.workItemId}`,
+      startDate: opts.deadline ? new Date(opts.deadline) : new Date(),
+      endDate: opts.deadline ? new Date(opts.deadline) : null,
+      attendees: [opts.recipientEmail, opts.assignorEmail]
+    });
+
+    const html = layout("Task Assigned to You", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
-      <p style="margin: 0 0 16px;">You have been assigned to a stage. Please review and begin when ready.</p>
+      <p style="margin: 0 0 16px;">You have been assigned to a Task. Please review and begin when ready.</p>
       ${TABLE_OPEN}
         ${row("Work Item", `${opts.workNumber} — ${opts.workTitle}`)}
-        ${row("Stage", opts.stageName)}
+        ${row("Task", opts.stageName)}
+        ${row("Created At", formatDateTime(opts.createdAt || new Date()))}
       ${TABLE_CLOSE}
-      <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">Open Work Item &rarr;</a>
+      <div>
+        <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">Open Work Item &rarr;</a>
+        <a href="${gcalUrl}" target="_blank" style="${BTN_GCAL_STYLE}"> Add to Google Calendar &rarr;</a>
+      </div>
     `);
-    await this.send(opts.recipientEmail, `Stage Assigned: ${opts.stageName} (${opts.workNumber})`, html);
+    await this.send(opts.recipientEmail, `Task Assigned: ${opts.stageName} (${opts.workNumber})`, html);
   }
 
   static async sendStageSubmittedToTL(opts: {
     recipientEmail: string; recipientName: string; employeeName: string;
     stageName: string; workNumber: string; workTitle: string; workItemId: string;
   }) {
-    const html = layout("Stage Submitted — Review Required", `
+    const html = layout("Task Submitted — Review Required", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
       <p style="margin: 0 0 16px;"><strong>${opts.employeeName}</strong> has submitted a stage for your review.</p>
       ${TABLE_OPEN}
         ${row("Work Item", `${opts.workNumber} — ${opts.workTitle}`)}
-        ${row("Stage", opts.stageName)}
+        ${row("Task", opts.stageName)}
         ${row("Status", `${BADGE_YELLOW}Awaiting TL Review${BADGE_CLOSE}`)}
       ${TABLE_CLOSE}
       <a href="${BASE_URL}/tl/work/${opts.workItemId}" style="${BTN_STYLE}">Review Now &rarr;</a>
@@ -156,58 +185,67 @@ export class EmailService {
     recipientEmail: string; recipientName: string; employeeName: string;
     stageName: string; workNumber: string; workTitle: string; workItemId: string;
   }) {
-    const html = layout("Co-worker Stage Submitted", `
+    const html = layout("Co-worker Task Submitted", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
-      <p style="margin: 0 0 16px;">Your co-worker <strong>${opts.employeeName}</strong> has completed and submitted their stage <strong>${opts.stageName}</strong> for the work item.</p>
+      <p style="margin: 0 0 16px;">Your co-worker <strong>${opts.employeeName}</strong> has completed and submitted their task <strong>${opts.stageName}</strong> for the work item.</p>
       ${TABLE_OPEN}
         ${row("Work Item", `${opts.workNumber} — ${opts.workTitle}`)}
-        ${row("Submitted Stage", opts.stageName)}
+        ${row("Submitted Task", opts.stageName)}
         ${row("Status", `${BADGE_YELLOW}Awaiting TL Review${BADGE_CLOSE}`)}
       ${TABLE_CLOSE}
       <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">Open Work Item &rarr;</a>
     `);
-    await this.send(opts.recipientEmail, `Stage Submitted: ${opts.stageName} (${opts.workNumber})`, html);
+    await this.send(opts.recipientEmail, `Task Submitted: ${opts.stageName} (${opts.workNumber})`, html);
   }
 
   static async sendStageApproved(opts: {
     recipientEmail: string; recipientName: string;
     stageName: string; workNumber: string; workItemId: string;
   }) {
-    const html = layout("Stage Approved", `
+    const html = layout("Task Approved", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
       <p style="margin: 0 0 16px;">Your submission has been approved by the Team Leader.</p>
       ${TABLE_OPEN}
         ${row("Work Item", opts.workNumber)}
-        ${row("Stage", opts.stageName)}
+        ${row("Task", opts.stageName)}
         ${row("Status", `${BADGE_GREEN}Approved${BADGE_CLOSE}`)}
       ${TABLE_CLOSE}
       <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
     `);
-    await this.send(opts.recipientEmail, `Stage Approved: ${opts.stageName} (${opts.workNumber})`, html);
+    await this.send(opts.recipientEmail, `Task Approved: ${opts.stageName} (${opts.workNumber})`, html);
   }
 
   static async sendStageRejected(opts: {
     recipientEmail: string; recipientName: string;
     stageName: string; workNumber: string; reason: string; workItemId: string;
   }) {
-    const html = layout("Stage Rejected — Action Required", `
+    const html = layout("Task Rejected — Action Required", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
       <p style="margin: 0 0 16px;">Your submission has been rejected. Please review the feedback and resubmit.</p>
       ${TABLE_OPEN}
         ${row("Work Item", opts.workNumber)}
-        ${row("Stage", opts.stageName)}
+        ${row("Task", opts.stageName)}
         ${row("Status", `${BADGE_RED}Rejected${BADGE_CLOSE}`)}
         ${row("Reason", opts.reason)}
       ${TABLE_CLOSE}
       <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">View &amp; Resubmit &rarr;</a>
     `);
-    await this.send(opts.recipientEmail, `Stage Rejected: ${opts.stageName} (${opts.workNumber})`, html);
+    await this.send(opts.recipientEmail, `Task Rejected: ${opts.stageName} (${opts.workNumber})`, html);
   }
 
   static async sendNextStageReady(opts: {
     recipientEmail: string; recipientName: string;
     stageName: string; workNumber: string; workTitle: string; workItemId: string;
+    deadline?: Date | string | null;
   }) {
+    const gcalUrl = createGoogleCalendarUrl({
+      title: `[${opts.workNumber}] ${opts.stageName}`,
+      description: `Task "${opts.stageName}" unlocked for Work Item ${opts.workNumber} - ${opts.workTitle}.\nView details: ${BASE_URL}/employee/work/${opts.workItemId}`,
+      startDate: opts.deadline ? new Date(opts.deadline) : new Date(),
+      endDate: opts.deadline ? new Date(opts.deadline) : null,
+      attendees: [opts.recipientEmail]
+    });
+
     const html = layout("Your Next Stage is Ready", `
       <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
       <p style="margin: 0 0 16px;">The previous stage has been completed and your next stage is now unlocked.</p>
@@ -216,7 +254,10 @@ export class EmailService {
         ${row("Stage", opts.stageName)}
         ${row("Status", `${BADGE_BLUE}Ready${BADGE_CLOSE}`)}
       ${TABLE_CLOSE}
-      <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">Start Working &rarr;</a>
+      <div>
+        <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">Start Working &rarr;</a>
+        <a href="${gcalUrl}" target="_blank" style="${BTN_GCAL_STYLE}"> Add to Google Calendar &rarr;</a>
+      </div>
     `);
     await this.send(opts.recipientEmail, `Stage Ready: ${opts.stageName} (${opts.workNumber})`, html);
   }
@@ -444,9 +485,9 @@ export class EmailService {
       <p style="margin: 0 0 16px;">Hello Team Leader,</p>
       <p style="margin: 0 0 16px;"><strong>${opts.employeeName}</strong> has started working on a stage.</p>
       ${TABLE_OPEN}
-        ${row("Work Item", `${opts.workNumber} — ${opts.workTitle}`)}
-        ${row("Stage", opts.stageName)}
-        ${row("Status", `${BADGE_BLUE}In Progress${BADGE_CLOSE}`)}
+        ${row(" Work Item", `${opts.workNumber} — ${opts.workTitle}`+ " ")}
+        ${row(" Stage", opts.stageName+ " ")}
+        ${row(" Status", `${BADGE_BLUE}In Progress${BADGE_CLOSE}`+ " ")}
       ${TABLE_CLOSE}
       <a href="${BASE_URL}/tl/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
     `);
@@ -507,5 +548,51 @@ export class EmailService {
       <a href="${BASE_URL}/employee/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
     `);
     await this.send(opts.recipientEmail, `Stage Cancelled: ${opts.stageName} (${opts.workNumber})`, html);
+  }
+
+  // ── Work Item Updated ──────────────────────────────────────────────────────
+  static async sendWorkItemUpdated(opts: {
+    recipientEmail: string; recipientName: string;
+    workNumber: string; title: string; changes: string[]; workItemId: string;
+    estimatedEnd?: Date | string | null;
+  }) {
+    const gcalUrl = createGoogleCalendarUrl({
+      title: `[${opts.workNumber}] ${opts.title}`,
+      description: `Work Item ${opts.workNumber} details updated.\nView details: ${BASE_URL}/tl/work/${opts.workItemId}`,
+      startDate: opts.estimatedEnd ? new Date(opts.estimatedEnd) : new Date(),
+      endDate: opts.estimatedEnd ? new Date(opts.estimatedEnd) : null,
+      attendees: [opts.recipientEmail]
+    });
+
+    const html = layout("Work Item Updated", `
+      <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
+      <p style="margin: 0 0 16px;">The details for work item <strong>${opts.workNumber}</strong> have been updated.</p>
+      ${TABLE_OPEN}
+        ${row("Work Number", opts.workNumber)}
+        ${row("Title", opts.title)}
+        ${opts.changes.length > 0 ? row("Updated Fields", opts.changes.join(", ")) : ""}
+      ${TABLE_CLOSE}
+      <div>
+        <a href="${BASE_URL}/tl/work/${opts.workItemId}" style="${BTN_STYLE}">View Work Item &rarr;</a>
+        <a href="${gcalUrl}" target="_blank" style="${BTN_GCAL_STYLE}"> Add to Google Calendar &rarr;</a>
+      </div>
+    `);
+    await this.send(opts.recipientEmail, `Work Item Updated: ${opts.workNumber} — ${opts.title}`, html);
+  }
+
+  // ── User Profile Updated ───────────────────────────────────────────────────
+  static async sendUserProfileUpdated(opts: {
+    recipientEmail: string; recipientName: string; updatedFields: string[];
+  }) {
+    const html = layout("Profile Details Updated", `
+      <p style="margin: 0 0 16px;">Hello <strong>${opts.recipientName}</strong>,</p>
+      <p style="margin: 0 0 16px;">Your user profile details have been updated by your Team Leader.</p>
+      ${TABLE_OPEN}
+        ${row("Employee", opts.recipientName)}
+        ${opts.updatedFields.length > 0 ? row("Updated Fields", opts.updatedFields.join(", ")) : ""}
+      ${TABLE_CLOSE}
+      <a href="${BASE_URL}/employee/profile" style="${BTN_STYLE}">View Profile &rarr;</a>
+    `);
+    await this.send(opts.recipientEmail, "Your Profile Details Have Been Updated", html);
   }
 }

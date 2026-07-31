@@ -41,7 +41,7 @@ export function CombinedDashboardView({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Quick Metrics */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card className="border-l-4 border-l-indigo-600">
           <CardContent className="pt-6">
             <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Kodewise Clients</div>
@@ -67,7 +67,7 @@ export function CombinedDashboardView({
 
         <Card>
           <CardContent className="pt-6">
-            <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Active Content Tickets</div>
+            <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Active Tasks</div>
             <div className="text-4xl font-bold text-gray-900 font-heading mt-2">
               {tickets.filter((t) => t.status !== "Published").length}
             </div>
@@ -77,13 +77,13 @@ export function CombinedDashboardView({
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardContent className="pt-6">
             <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Work Logs Recorded</div>
             <div className="text-4xl font-bold text-gray-900 font-heading mt-2">{logs.length}</div>
             <div className="text-xs text-gray-500 mt-1">Daily updates recorded by team</div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Double column grid */}
@@ -102,7 +102,7 @@ export function CombinedDashboardView({
                     <th className="p-3">AMC</th>
                     <th className="p-3">SEO</th>
                     <th className="p-3">Status</th>
-                    <th className="p-3 text-right pr-6">Actions</th>
+                    {/* <th className="p-3 text-right pr-6">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -133,7 +133,7 @@ export function CombinedDashboardView({
                           {c.status}
                         </Badge>
                       </td>
-                      <td className="py-3 text-right pr-6 space-x-1">
+                      {/* <td className="py-3 text-right pr-6 space-x-1">
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleOpenEditClient(c, "KW")}>
                           Edit
                         </Button>
@@ -149,7 +149,7 @@ export function CombinedDashboardView({
                         >
                           {c.isActive !== false ? "Deactivate" : "Activate"}
                         </Button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                   {visibleKwClients.length === 0 && (
@@ -182,7 +182,7 @@ export function CombinedDashboardView({
                     <th className="p-3 pl-6">Client</th>
                     <th className="p-3">Weekly Posts</th>
                     <th className="p-3">Weekly Reels</th>
-                    <th className="p-3 text-right pr-6">Actions</th>
+                    {/* <th className="p-3 text-right pr-6">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -193,7 +193,7 @@ export function CombinedDashboardView({
                       </td>
                       <td className="py-3 text-gray-600 font-medium">{c.post || 0} posts</td>
                       <td className="py-3 text-gray-600 font-medium">{c.reel || 0} reels</td>
-                      <td className="py-3 text-right pr-6 space-x-1">
+                      {/* <td className="py-3 text-right pr-6 space-x-1">
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleOpenEditClient(c, "FC")}>
                           Edit
                         </Button>
@@ -209,7 +209,7 @@ export function CombinedDashboardView({
                         >
                           {c.isActive !== false ? "Deactivate" : "Activate"}
                         </Button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                   {visibleFcClients.length === 0 && (
@@ -277,7 +277,7 @@ export function CombinedDashboardView({
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle className="text-lg">Recent Work Logs</CardTitle>
             </CardHeader>
@@ -300,7 +300,7 @@ export function CombinedDashboardView({
                 </div>
               ))}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>

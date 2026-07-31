@@ -206,7 +206,7 @@ export function FCDashboardView({
                   <th className="py-3.5 px-6 font-bold text-gray-700">CLIENT</th>
                   <th className="py-3.5 px-6 font-bold text-gray-700 text-center">WEEKLY POSTS</th>
                   <th className="py-3.5 px-6 font-bold text-gray-700 text-center">WEEKLY REELS</th>
-                  <th className="py-3.5 px-6 font-bold text-gray-700 text-right">ACTIONS</th>
+                  {/* <th className="py-3.5 px-6 font-bold text-gray-700 text-right">ACTIONS</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -220,7 +220,7 @@ export function FCDashboardView({
                       <td className="py-4 px-6 font-bold text-gray-950">{c.name}</td>
                       <td className="py-4 px-6 text-center text-gray-700 font-medium">{postsTarget}</td>
                       <td className="py-4 px-6 text-center text-gray-700 font-medium">{reelsTarget}</td>
-                      <td className="py-4 px-6 text-right space-x-2">
+                      {/* <td className="py-4 px-6 text-right space-x-2">
                         <Button 
                           size="sm" 
                           variant="ghost" 
@@ -242,7 +242,7 @@ export function FCDashboardView({
                         >
                           {c.isActive !== false ? "Deactivate" : "Activate"}
                         </Button>
-                      </td>
+                      </td> */}
                     </tr>
                   );
                 })}
@@ -253,9 +253,9 @@ export function FCDashboardView({
       </Card>
 
       {/* 4. Feeds Grid (3-column layout) */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 pt-4">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 pt-4">
         {/* His Tasks column */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle className="text-lg">His Tasks (Assigned to TL / Admin)</CardTitle>
           </CardHeader>
@@ -284,7 +284,7 @@ export function FCDashboardView({
               (t) => t.company === "Football Counter" && t.assignee === "Loknath Epili" && t.status !== "Published"
             ).length === 0 && <p className="text-sm text-gray-400 text-center py-6">No tasks assigned to your role.</p>}
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Ongoing Tasks column */}
         <Card>
@@ -320,7 +320,7 @@ export function FCDashboardView({
         </Card>
 
         {/* Work Logs column */}
-        <Card>
+        {/* <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Work Logs (FC)</CardTitle>
             <Button size="sm" variant="ghost" onClick={handleOpenAddLog}>
@@ -351,7 +351,7 @@ export function FCDashboardView({
               <p className="text-sm text-gray-400 text-center py-6">No logs recorded.</p>
             )}
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

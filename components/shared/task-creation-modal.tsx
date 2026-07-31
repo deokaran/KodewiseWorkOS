@@ -427,8 +427,20 @@ export function TaskCreationModal({
                 <div className="grid grid-cols-2 gap-4">
                   {processStages.map((stage: any) => {
                     const eligibleEmployees = stage.capabilityId
-                      ? users.filter((u: any) => u.capabilities?.some((c: any) => c.id === stage.capabilityId))
-                      : users;
+                      ? (users || []).filter((u: any) => u.capabilities?.some((c: any) => c.id === stage.capabilityId))
+                      : (users || []);
+
+                    const currentAssignedId = stageAssignments[stage.id] || (stage.defaultAssigneeId ?? "none");
+                    const currentAssignedUser = (users || []).find((u: any) => u.id === currentAssignedId);
+
+                    const finalEligible = [...eligibleEmployees];
+                    if (currentAssignedUser && !finalEligible.some((u: any) => u.id === currentAssignedUser.id)) {
+                      finalEligible.push(currentAssignedUser);
+                    }
+
+                    const selectedValue = stageAssignments[stage.id] !== undefined
+                      ? stageAssignments[stage.id]
+                      : (stage.defaultAssigneeId && (users || []).some((u: any) => u.id === stage.defaultAssigneeId) ? stage.defaultAssigneeId : "none");
 
                     return (
                       <div key={stage.id} className="space-y-2">
@@ -436,12 +448,12 @@ export function TaskCreationModal({
                           {stage.name} {stage.capability?.name ? `(${stage.capability.name})` : ""}
                         </Label>
                         <Select
-                          key={`stage-${stage.id}-${stageAssignments[stage.id] || "none"}-${eligibleEmployees.length}`}
-                          value={stageAssignments[stage.id] || "none"}
+                          key={`stage-${stage.id}-${selectedValue}-${finalEligible.length}`}
+                          value={selectedValue || "none"}
                           onValueChange={(val) => setStageAssignments(prev => ({ ...prev, [stage.id]: val || "none" }))}
                           items={[
                             { value: "none", label: stage.isDefaultOpenPool ? "Default (Open Pool)" : "Unassigned" },
-                            ...eligibleEmployees.map((e: any) => ({ value: e.id, label: e.name }))
+                            ...finalEligible.map((e: any) => ({ value: e.id, label: e.name }))
                           ]}
                         >
                           <SelectTrigger className="w-full h-8 bg-gray-50 border-gray-200 text-gray-700">
@@ -451,7 +463,7 @@ export function TaskCreationModal({
                             <SelectItem value="none">
                               {stage.isDefaultOpenPool ? "Default (Open Pool)" : "Unassigned"}
                             </SelectItem>
-                            {eligibleEmployees.map((e: any) => (
+                            {finalEligible.map((e: any) => (
                               <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                             ))}
                           </SelectContent>

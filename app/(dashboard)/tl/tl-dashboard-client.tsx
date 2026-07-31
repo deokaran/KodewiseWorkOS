@@ -405,9 +405,9 @@ export function TLDashboardClient({
               ⚙ Adjust Targets
             </Button>
           )}
-          <Button variant="outline" onClick={handleOpenAddLog}>
+          {/* <Button variant="outline" onClick={handleOpenAddLog}>
             ＋ Add Work Log
-          </Button>
+          </Button> */}
           <Button variant="default" className="bg-slate-900 text-white" onClick={() => setIsTaskModalOpen(true)}>
             ＋ Add Task
           </Button>

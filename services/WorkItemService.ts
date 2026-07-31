@@ -211,20 +211,27 @@ export class WorkItemService {
   }
 
   static async update(data: z.infer<typeof WorkItemUpdateSchema>, userId: string) {
-    return prisma.$transaction(async (tx) => {
-      const existing = await tx.workItem.findUnique({
+    const { existing, updated } = await prisma.$transaction(async (tx) => {
+      const existingItem = await tx.workItem.findUnique({
         where: { id: data.id },
-        include: { tags: true }
+        include: {
+          createdBy: { select: { email: true, name: true } },
+          stages: {
+            include: {
+              assignedUser: { select: { email: true, name: true } }
+            }
+          }
+        }
       });
 
-      if (!existing) throw new AppError("Work Item not found", "NOT_FOUND", 404);
+      if (!existingItem) throw new AppError("Work Item not found", "NOT_FOUND", 404);
 
       // Delete existing tags and recreate
       await tx.workItemTag.deleteMany({
         where: { workItemId: data.id }
       });
 
-      const updated = await tx.workItem.update({
+      const updatedItem = await tx.workItem.update({
         where: { id: data.id },
         data: {
           title: data.title,
@@ -239,8 +246,41 @@ export class WorkItemService {
         }
       });
 
-      return updated;
+      return { existing: existingItem, updated: updatedItem };
     });
+
+    // Detect changed fields for email notification
+    const changes: string[] = [];
+    if (data.title && data.title !== existing.title) changes.push("Title");
+    if (data.description !== existing.description) changes.push("Description");
+    if (data.priority && data.priority !== existing.priority) changes.push("Priority");
+    if (data.clientId !== existing.clientId) changes.push("Client");
+    if (data.workTypeId !== existing.workTypeId) changes.push("Work Type");
+    if (data.estimatedEnd?.getTime() !== existing.estimatedEnd?.getTime()) changes.push("Deadline");
+
+    // Gather unique recipient emails (official emails)
+    const recipientMap = new Map<string, string>();
+    if (existing.createdBy?.email) {
+      recipientMap.set(existing.createdBy.email, existing.createdBy.name);
+    }
+    for (const stage of existing.stages) {
+      if (stage.assignedUser?.email) {
+        recipientMap.set(stage.assignedUser.email, stage.assignedUser.name);
+      }
+    }
+
+    for (const [email, name] of Array.from(recipientMap.entries())) {
+      EmailService.sendWorkItemUpdated({
+        recipientEmail: email,
+        recipientName: name,
+        workNumber: updated.workNumber,
+        title: updated.title,
+        changes,
+        workItemId: updated.id,
+      });
+    }
+
+    return updated;
   }
 
   static async archive(id: string, userId: string) {

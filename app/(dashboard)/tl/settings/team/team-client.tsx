@@ -163,7 +163,7 @@ export function TeamClient({
   const getEligiblePoolItems = (user: UserWithCapabilitiesAndBrand) => {
     return poolItems.filter((item: any) => {
       if (item.capabilityId) {
-        return user.capabilities.some((c: any) => c.id === item.capabilityId);
+        return (user.capabilities || []).some((c: any) => c.id === item.capabilityId);
       }
       return true;
     });
@@ -226,7 +226,7 @@ export function TeamClient({
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1 flex-wrap">
-                    {user.capabilities.map(cap => (
+                    {(user.capabilities || []).map(cap => (
                       <Badge key={cap.id} variant="outline" className="text-gray-600">{cap.name}</Badge>
                     ))}
                   </div>
@@ -372,7 +372,7 @@ export function TeamClient({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None (Global / System)</SelectItem>
-                    {brands.map((b: any) => (
+                    {(brands || []).map((b: any) => (
                       <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -390,7 +390,7 @@ export function TeamClient({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
-                    {departments.map((d: any) => (
+                    {(departments || []).map((d: any) => (
                       <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -434,7 +434,7 @@ export function TeamClient({
             <div className="space-y-2">
               <Label>Capabilities</Label>
               <div className="flex flex-wrap gap-2 border p-3 rounded-md max-h-[140px] overflow-y-auto bg-gray-50/20">
-                {capabilities.map(cap => (
+                {(capabilities || []).map(cap => (
                   <label key={cap.id} className="flex items-center space-x-2 cursor-pointer select-none">
                     <input 
                       type="checkbox" 

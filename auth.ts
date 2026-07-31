@@ -35,7 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name,
             role: user.role,
             roles: user.roles,
-            capabilities: user.capabilities.map(c => c.name)
+            capabilities: (user.capabilities || []).map(c => c.name)
           };
         }
 

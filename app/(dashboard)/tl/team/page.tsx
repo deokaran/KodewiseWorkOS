@@ -22,7 +22,8 @@ export default async function TLTeamMembersPage({ searchParams }: { searchParams
     tags,
     clients,
     workTypes,
-    processes
+    processes,
+    departments
   ] = await Promise.all([
     UserService.list(),
     CapabilityService.list(),
@@ -46,7 +47,8 @@ export default async function TLTeamMembersPage({ searchParams }: { searchParams
     TagService.list(),
     ClientService.list(),
     WorkTypeService.list(),
-    ProcessTemplateService.list()
+    ProcessTemplateService.list(),
+    prisma.department.findMany({ orderBy: { name: "asc" } })
   ]);
 
   let filteredUsers = users;
@@ -82,6 +84,7 @@ export default async function TLTeamMembersPage({ searchParams }: { searchParams
         workTypes={sanitizeForClient(workTypes)}
         processes={sanitizeForClient(publishedProcesses)}
         currentUserId={user.id}
+        departments={sanitizeForClient(departments)}
       />
     </div>
   );

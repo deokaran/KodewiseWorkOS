@@ -64,7 +64,7 @@ export default async function ProcessDetailPage({ params }: { params: Promise<{ 
                       </TableCell>
                       <TableCell className="text-right">
                         <Link href={`/tl/processes/${process.id}/versions/${version.id}`}>
-                          <Button variant="ghost" size="sm">Open Builder</Button>
+                          <Button className="bg-blue-500" size="sm">Open Builder</Button>
                         </Link>
                       </TableCell>
                     </TableRow>

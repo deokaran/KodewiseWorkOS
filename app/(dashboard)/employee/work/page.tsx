@@ -6,6 +6,8 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth/utils";
 import { prisma } from "@/lib/db/prisma";
 
+import { formatDateTime } from "@/lib/utils";
+
 export default async function EmployeeWorkItemsPage() {
   const user = await requireRole("EMPLOYEE");
 
@@ -55,6 +57,7 @@ export default async function EmployeeWorkItemsPage() {
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Process</TableHead>
+              <TableHead>Created At</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,6 +85,9 @@ export default async function EmployeeWorkItemsPage() {
                 </TableCell>
                 <TableCell className="text-sm text-gray-500">
                   {item.processVersion.template.name} v{item.processVersion.version}
+                </TableCell>
+                <TableCell className="text-xs text-gray-500 font-medium">
+                  {formatDateTime(item.createdAt)}
                 </TableCell>
               </TableRow>
             ))}

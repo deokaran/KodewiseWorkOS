@@ -104,9 +104,9 @@ export function WorkFormDialog({
     const value = val || "none";
     setFormData(prev => {
       const nextData = { ...prev, processTemplateId: value };
-      if (value && value !== "none") {
+      if (value && value !== "none" && processes) {
         const process = processes.find((p: any) => p.id === value);
-        if (process) {
+        if (process && workTypes) {
           const procName = process.name.toLowerCase();
           const matchedWt = workTypes.find((wt: any) => {
             const wtName = wt.name.toLowerCase();
@@ -123,7 +123,7 @@ export function WorkFormDialog({
       return nextData;
     });
 
-    if (prefilledEmployeeId && value !== "none") {
+    if (prefilledEmployeeId && value !== "none" && processes) {
       const process = processes.find((p: any) => p.id === value);
       const version = process?.versions?.find((v: any) => v.isPublished) || process?.versions?.[0];
       const firstStage = version?.stages?.[0];
@@ -173,14 +173,14 @@ export function WorkFormDialog({
 
   const isEdit = !!initialData;
 
-  const brandTags = tags.filter((t: any) => t.type === "BRAND");
+  const brandTags = (tags || []).filter((t: any) => t.type === "BRAND");
   const filteredClients = formData.primaryBrandTagId !== "none"
-    ? clients.filter((c: any) => c.tags.some((t: any) => t.tagId === formData.primaryBrandTagId))
-    : clients;
-  const otherTags = tags.filter((t: any) => t.type !== "BRAND");
+    ? (clients || []).filter((c: any) => c.tags?.some((t: any) => t.tagId === formData.primaryBrandTagId))
+    : (clients || []);
+  const otherTags = (tags || []).filter((t: any) => t.type !== "BRAND");
 
-  const selectedProcess = processes.find((p: any) => p.id === formData.processTemplateId);
-  const activeVersion = selectedProcess?.versions.find((v: any) => v.isPublished) || selectedProcess?.versions[0];
+  const selectedProcess = (processes || []).find((p: any) => p.id === formData.processTemplateId);
+  const activeVersion = selectedProcess?.versions?.find((v: any) => v.isPublished) || selectedProcess?.versions?.[0];
   const processStages = activeVersion?.stages || [];
 
   return (
@@ -368,19 +368,31 @@ export function WorkFormDialog({
                 {processStages.map((stage: any) => {
                   // Filter employees by capability if stage requires capability
                   const eligibleEmployees = stage.capabilityId 
-                    ? employees.filter((e: any) => e.capabilities.some((c: any) => c.id === stage.capabilityId))
-                    : employees;
+                    ? (employees || []).filter((e: any) => e.capabilities?.some((c: any) => c.id === stage.capabilityId))
+                    : (employees || []);
+
+                  const currentAssignedId = stageAssignments[stage.id] || (stage.defaultAssigneeId ?? "none");
+                  const currentAssignedUser = (employees || []).find((e: any) => e.id === currentAssignedId);
+
+                  const finalEligible = [...eligibleEmployees];
+                  if (currentAssignedUser && !finalEligible.some((e: any) => e.id === currentAssignedUser.id)) {
+                    finalEligible.push(currentAssignedUser);
+                  }
+
+                  const selectedValue = stageAssignments[stage.id] !== undefined
+                    ? stageAssignments[stage.id]
+                    : (stage.defaultAssigneeId && (employees || []).some((e: any) => e.id === stage.defaultAssigneeId) ? stage.defaultAssigneeId : "none");
 
                   return (
                     <div key={stage.id} className="space-y-2">
                       <Label className="text-xs text-gray-600 block">{stage.name} {stage.capability?.name ? `(${stage.capability.name})` : ""}</Label>
                       <Select 
-                        key={`stage-${stage.id}-${stageAssignments[stage.id] || "none"}-${eligibleEmployees.length}`}
-                        value={stageAssignments[stage.id] || "none"} 
+                        key={`stage-${stage.id}-${selectedValue}-${finalEligible.length}`}
+                        value={selectedValue || "none"} 
                         onValueChange={(val) => setStageAssignments(prev => ({ ...prev, [stage.id]: val || "none" }))}
                         items={[
                           { value: "none", label: stage.isDefaultOpenPool ? "Default (Open Pool)" : "Unassigned" },
-                          ...eligibleEmployees.map((e: any) => ({ value: e.id, label: e.name }))
+                          ...finalEligible.map((e: any) => ({ value: e.id, label: e.name }))
                         ]}
                       >
                         <SelectTrigger className="w-full h-8 bg-gray-50 border-gray-200 text-gray-700">
@@ -388,7 +400,7 @@ export function WorkFormDialog({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">{stage.isDefaultOpenPool ? "Default (Open Pool)" : "Unassigned"}</SelectItem>
-                          {eligibleEmployees.map((e: any) => (
+                          {finalEligible.map((e: any) => (
                             <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
                           ))}
                         </SelectContent>

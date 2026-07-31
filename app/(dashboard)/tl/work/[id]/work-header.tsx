@@ -8,7 +8,10 @@ import { archiveWorkItemAction } from "@/actions/work-items";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
-export function WorkHeader({ workItem, tags, clients, workTypes }: any) {
+import { createGoogleCalendarUrl } from "@/lib/gcal";
+import { formatDateTime } from "@/lib/utils";
+
+export function WorkHeader({ workItem, tags, clients, workTypes, processes, employees, currentUser }: any) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const router = useRouter();
@@ -18,6 +21,13 @@ export function WorkHeader({ workItem, tags, clients, workTypes }: any) {
     router.refresh();
     router.push("/tl/work");
   };
+
+  const gcalUrl = createGoogleCalendarUrl({
+    title: `[${workItem.workNumber}] ${workItem.title}`,
+    description: `Work Item: ${workItem.workNumber} - ${workItem.title}\nBrand: ${workItem.primaryBrandTag?.name}\nPriority: ${workItem.priority}`,
+    startDate: workItem.estimatedEnd ? new Date(workItem.estimatedEnd) : new Date(),
+    endDate: workItem.estimatedEnd ? new Date(workItem.estimatedEnd) : null,
+  });
 
   return (
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-xl border border-gray-200/80">
@@ -35,10 +45,22 @@ export function WorkHeader({ workItem, tags, clients, workTypes }: any) {
           )}
 
           <Badge variant={workItem.priority === 'CRITICAL' ? 'destructive' : 'secondary'}>{workItem.priority}</Badge>
+
+          <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">
+            🕒 {formatDateTime(workItem.createdAt)}
+          </Badge>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
+        <a
+          href={gcalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition shadow-sm"
+        >
+          <span>📅 Add to Google Calendar</span>
+        </a>
         {!workItem.deletedAt && (
           <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={() => setIsConfirmOpen(true)}>Archive</Button>
         )}
@@ -53,6 +75,9 @@ export function WorkHeader({ workItem, tags, clients, workTypes }: any) {
           tags={tags}
           clients={clients}
           workTypes={workTypes}
+          processes={processes}
+          employees={employees}
+          currentUser={currentUser}
         />
       )}
 

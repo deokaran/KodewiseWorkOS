@@ -381,8 +381,12 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
+                    
                     <div className="flex gap-2 justify-end">
-                      <Button
+                      <Link href={`/tl/clients/${c.id}`} className="hover:underline hover:text-indigo-600 transition-colors border px-3 pill">
+                     View Profile
+                    </Link>
+                    <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleOpenEdit(c)}

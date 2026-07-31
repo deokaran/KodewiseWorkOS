@@ -18,7 +18,7 @@ export default async function WorkItemsPage({ searchParams }: { searchParams: Pr
     ClientService.list(),
     WorkTypeService.list(),
     ProcessTemplateService.list(),
-    UserService.listByRole("EMPLOYEE")
+    UserService.list()
   ]);
 
   const publishedProcesses = processes.filter(p => p.versions.some(v => v.isPublished));

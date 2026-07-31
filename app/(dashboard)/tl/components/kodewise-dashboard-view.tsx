@@ -47,7 +47,7 @@ export function KodewiseDashboardView({
                     <th className="pb-3">AMC</th>
                     <th className="pb-3">SEO</th>
                     <th className="pb-3">Revamp Stage</th>
-                    <th className="pb-3 text-right">Actions</th>
+                    {/* <th className="pb-3 text-right">Actions</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
@@ -67,7 +67,7 @@ export function KodewiseDashboardView({
                       <td className="py-3">
                         <Badge variant="outline">{c.revamp}</Badge>
                       </td>
-                      <td className="py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                      {/* <td className="py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="outline" onClick={() => handleOpenEditClient(c, "KW")}>
                           Edit
                         </Button>
@@ -82,7 +82,7 @@ export function KodewiseDashboardView({
                         >
                           {c.isActive !== false ? "Deactivate" : "Activate"}
                         </Button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
@@ -119,7 +119,7 @@ export function KodewiseDashboardView({
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Work Logs (Kodewise)</CardTitle>
               <Button size="sm" variant="ghost" onClick={handleOpenAddLog}>
@@ -147,7 +147,7 @@ export function KodewiseDashboardView({
                   </div>
                 ))}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
