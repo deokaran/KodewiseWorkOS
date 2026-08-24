@@ -30,6 +30,8 @@ export function KodewiseDashboardView({
   handleOpenEditLog,
   setSelectedKwClientDetail,
 }: KodewiseDashboardViewProps) {
+  const activeKwClients = kwClients.filter((c) => c.isActive !== false);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
@@ -51,7 +53,7 @@ export function KodewiseDashboardView({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-sm">
-                  {kwClients.map((c) => (
+                  {activeKwClients.map((c) => (
                     <tr
                       key={c.id}
                       className="hover:bg-gray-50/50 cursor-pointer"
@@ -67,24 +69,15 @@ export function KodewiseDashboardView({
                       <td className="py-3">
                         <Badge variant="outline">{c.revamp}</Badge>
                       </td>
-                      {/* <td className="py-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
-                        <Button size="sm" variant="outline" onClick={() => handleOpenEditClient(c, "KW")}>
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={c.isActive !== false
-                            ? "border-amber-200 text-amber-700 hover:bg-amber-50"
-                            : "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                          }
-                          onClick={() => handleToggleActiveClient(c.id, c.isActive !== false)}
-                        >
-                          {c.isActive !== false ? "Deactivate" : "Activate"}
-                        </Button>
-                      </td> */}
                     </tr>
                   ))}
+                  {activeKwClients.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-gray-400 text-xs">
+                        No active Kodewise clients found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </CardContent>

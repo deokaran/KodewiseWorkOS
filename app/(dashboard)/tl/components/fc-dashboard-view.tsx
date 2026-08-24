@@ -40,9 +40,12 @@ export function FCDashboardView({
   logs,
   onRefreshClients,
 }: FCDashboardViewProps) {
-  
-  // Calculate total weekly target based on individual client targets
-  const totalWeeklyTarget = fcClients.reduce((sum, c) => {
+
+  // Only active clients for calculations and tables
+  const activeFcClients = fcClients.filter((c) => c.isActive !== false);
+
+  // Calculate total weekly target based on individual active client targets
+  const totalWeeklyTarget = activeFcClients.reduce((sum, c) => {
     const meta = parseClientNotes(c.notes);
     return sum + meta.targets.reduce((tSum, t) => tSum + (t.value || 0), 0);
   }, 0);
@@ -107,7 +110,7 @@ export function FCDashboardView({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      
+
       {/* 1. Combined Weekly Target Card */}
       <div className="bg-gradient-to-r from-orange-500 to-amber-600 rounded-3xl p-6 text-white shadow-xs flex justify-between items-center max-w-xl">
         <div>
@@ -138,7 +141,7 @@ export function FCDashboardView({
                 </tr>
               </thead>
               <tbody>
-                {fcClients.map((client) => {
+                {activeFcClients.map((client) => {
                   const meta = parseClientNotes(client.notes);
                   const schedule = meta.weeklySchedule;
 
@@ -178,15 +181,17 @@ export function FCDashboardView({
                     </tr>
                   );
                 })}
+                {activeFcClients.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-gray-400 text-xs">
+                      No active Football Counter clients with schedules.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          <div className="flex items-start gap-2 bg-slate-50 border p-3 rounded-xl mt-4 text-xs text-gray-500">
-            <Info className="h-4 w-4 text-orange-500 flex-shrink-0 mt-0.5" />
-            <p>
-              Each client gets either a Post or a Reel per day, never both &mdash; except YFC &amp; FC who need daily coverage of both.
-            </p>
-          </div>
+
         </CardContent>
       </Card>
 
@@ -206,11 +211,11 @@ export function FCDashboardView({
                   <th className="py-3.5 px-6 font-bold text-gray-700">CLIENT</th>
                   <th className="py-3.5 px-6 font-bold text-gray-700 text-center">WEEKLY POSTS</th>
                   <th className="py-3.5 px-6 font-bold text-gray-700 text-center">WEEKLY REELS</th>
-                  {/* <th className="py-3.5 px-6 font-bold text-gray-700 text-right">ACTIONS</th> */}
+                  <th className="py-3.5 px-6 font-bold text-gray-700 text-right">ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
-                {fcClients.map((c) => {
+                {activeFcClients.map((c) => {
                   const meta = parseClientNotes(c.notes);
                   const postsTarget = meta.targets.find(t => t.name === "post")?.value || 0;
                   const reelsTarget = meta.targets.find(t => t.name === "reel")?.value || 0;
@@ -220,11 +225,11 @@ export function FCDashboardView({
                       <td className="py-4 px-6 font-bold text-gray-950">{c.name}</td>
                       <td className="py-4 px-6 text-center text-gray-700 font-medium">{postsTarget}</td>
                       <td className="py-4 px-6 text-center text-gray-700 font-medium">{reelsTarget}</td>
-                      {/* <td className="py-4 px-6 text-right space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 text-gray-600 hover:text-orange-600" 
+                      <td className="py-4 px-6 text-right space-x-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-gray-600 hover:text-orange-600"
                           onClick={() => handleOpenEditClient(c, "FC")}
                         >
                           <Edit2 className="h-3.5 w-3.5 mr-1" />
@@ -233,19 +238,22 @@ export function FCDashboardView({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className={`h-8 ${
-                            c.isActive !== false
-                              ? "text-amber-700 hover:text-amber-800"
-                              : "text-emerald-700 hover:text-emerald-800"
-                          }`}
-                          onClick={() => handleToggleActiveClient(c.id, c.isActive !== false)}
+                          className="h-8 text-amber-700 hover:text-amber-800"
+                          onClick={() => handleToggleActiveClient(c.id, true)}
                         >
-                          {c.isActive !== false ? "Deactivate" : "Activate"}
+                          Deactivate
                         </Button>
-                      </td> */}
+                      </td>
                     </tr>
                   );
                 })}
+                {activeFcClients.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-gray-400 text-xs">
+                      No active Football Counter clients found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

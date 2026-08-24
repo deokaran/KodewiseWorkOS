@@ -74,6 +74,7 @@ export function TLDashboardClient({
         const kw: any[] = [];
         const fc: any[] = [];
         json.data.forEach((c: any) => {
+          if (c.isActive === false) return;
           let custom = { amc: false, seo: false, status: "Working", revamp: "None", post: 3, reel: 2 };
           if (c.notes) {
             try {

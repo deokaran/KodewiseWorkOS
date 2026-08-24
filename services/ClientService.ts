@@ -5,6 +5,7 @@ import { z } from "zod";
 import { encrypt, decrypt } from "@/lib/crypto";
 import {
   buildWeeklyScheduleFromTargets,
+  createEmptyWeeklySchedule,
   normalizeWeeklySchedule,
   parseClientNotes,
   serializeClientNotes,
@@ -52,8 +53,24 @@ function hasTargetData(rawNotes: Record<string, unknown>) {
 
 function normalizeNotesForWrite(
   incomingNotes: string | null | undefined,
-  existingNotes?: string | null
+  existingNotes?: string | null,
+  isDeactivating: boolean = false
 ) {
+  if (isDeactivating) {
+    const baseMeta = parseClientNotes(incomingNotes !== undefined ? incomingNotes : existingNotes);
+    const rawIncoming = parseRawNotes(incomingNotes !== undefined ? incomingNotes : existingNotes);
+    return serializeClientNotes({
+      amc: typeof rawIncoming.amc === "boolean" ? rawIncoming.amc : baseMeta.amc,
+      seo: typeof rawIncoming.seo === "boolean" ? rawIncoming.seo : baseMeta.seo,
+      status: typeof rawIncoming.status === "string" ? rawIncoming.status : baseMeta.status,
+      revamp: typeof rawIncoming.revamp === "string" ? rawIncoming.revamp : baseMeta.revamp,
+      targets: [],
+      weeklySchedule: createEmptyWeeklySchedule(),
+      post: 0,
+      reel: 0,
+    });
+  }
+
   if (incomingNotes === undefined) return undefined;
   if (incomingNotes === null || incomingNotes === "") return incomingNotes;
 
@@ -85,10 +102,11 @@ function normalizeNotesForWrite(
 }
 
 export class ClientService {
-  static async list(activeBrandName?: string) {
+  static async list(activeBrandName?: string, includeInactive: boolean = false) {
     const clients = await prisma.client.findMany({
       where: {
         deletedAt: null,
+        ...(includeInactive ? {} : { isActive: true }),
         ...(activeBrandName
           ? {
               tags: {
@@ -161,7 +179,7 @@ export class ClientService {
           phone: encrypt(data.phone),
           address: encrypt(data.address),
           website: data.website,
-          notes: normalizeNotesForWrite(data.notes),
+          notes: normalizeNotesForWrite(data.notes, undefined, data.isActive === false),
           isActive: data.isActive !== undefined ? data.isActive : true,
         },
       });
@@ -187,10 +205,19 @@ export class ClientService {
     const existing = await prisma.client.findUnique({ where: { id: data.id } });
     if (!existing) throw new AppError("Client not found", "NOT_FOUND", 404);
 
+    const isDeactivating = data.isActive === false;
+
     return prisma.$transaction(async (tx) => {
       let clientCode = data.clientCode;
       if (clientCode === undefined) {
         clientCode = existing.clientCode;
+      }
+
+      let notesToWrite: string | null | undefined;
+      if (isDeactivating) {
+        notesToWrite = normalizeNotesForWrite(data.notes, existing.notes, true);
+      } else if (data.notes !== undefined) {
+        notesToWrite = normalizeNotesForWrite(data.notes, existing.notes, false);
       }
 
       const client = await tx.client.update({
@@ -204,10 +231,17 @@ export class ClientService {
           phone: encrypt(data.phone),
           address: encrypt(data.address),
           website: data.website,
-          notes: data.notes !== undefined ? normalizeNotesForWrite(data.notes, existing.notes) : undefined,
+          notes: notesToWrite,
           isActive: data.isActive !== undefined ? data.isActive : undefined,
         },
       });
+
+      if (isDeactivating) {
+        await tx.contract.updateMany({
+          where: { clientId: client.id, isActive: true },
+          data: { isActive: false },
+        });
+      }
 
       if (data.tagIds !== undefined) {
         await tx.clientTag.deleteMany({ where: { clientId: client.id } });
@@ -230,11 +264,27 @@ export class ClientService {
   }
 
   static async archive(id: string) {
-    const client = await prisma.client.update({
-      where: { id },
-      data: { deletedAt: new Date() },
+    const existing = await prisma.client.findUnique({ where: { id } });
+    if (!existing) throw new AppError("Client not found", "NOT_FOUND", 404);
+
+    const clearedNotes = normalizeNotesForWrite(existing.notes, existing.notes, true);
+
+    return prisma.$transaction(async (tx) => {
+      await tx.contract.updateMany({
+        where: { clientId: id, isActive: true },
+        data: { isActive: false },
+      });
+
+      const client = await tx.client.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          isActive: false,
+          notes: clearedNotes,
+        },
+      });
+      return decryptClient(client);
     });
-    return decryptClient(client);
   }
 
   static async restore(id: string) {

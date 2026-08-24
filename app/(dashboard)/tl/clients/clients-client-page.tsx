@@ -21,6 +21,7 @@ interface ClientsClientPageProps {
 export function ClientsClientPage({ initialClients = [], brands = [], filterBrand }: ClientsClientPageProps) {
   const router = useRouter();
   const [clients, setClients] = useState(initialClients);
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("active");
 
   // Quick edit modal states
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -88,21 +89,22 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
   const handleToggleActive = async (client: any) => {
     setIsSaving(true);
     try {
+      const willBeActive = client.isActive === false;
       const res = await fetch(`/api/clients/${client.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: client.name,
           clientCode: client.clientCode || undefined,
-          isActive: client.isActive === false ? true : false,
+          isActive: willBeActive,
         })
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
 
-      toast.success(`Client ${client.isActive === false ? 'activated' : 'deactivated'} successfully`);
+      toast.success(`Client ${willBeActive ? 'activated' : 'deactivated'} successfully`);
       
-      const updatedRes = await fetch("/api/clients");
+      const updatedRes = await fetch("/api/clients?includeInactive=true");
       const updatedJson = await updatedRes.json();
       if (updatedJson.success) {
         setClients(updatedJson.data);
@@ -180,7 +182,7 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
       setEditingClient(null);
 
       // Fetch fresh clients list
-      const updatedRes = await fetch("/api/clients");
+      const updatedRes = await fetch("/api/clients?includeInactive=true");
       const updatedJson = await updatedRes.json();
       if (updatedJson.success) {
         setClients(updatedJson.data);
@@ -195,10 +197,19 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
   };
 
   // Filter clients by brand parameter
-  const filteredClients = clients.filter(c => {
+  const brandClients = clients.filter(c => {
     if (!filterBrand) return true;
     const tagName = filterBrand.toLowerCase() === "fc" ? "Football Counter" : "Kodewise";
     return c.tags?.some((t: any) => t.tag?.name === tagName);
+  });
+
+  const activeCount = brandClients.filter((c) => c.isActive !== false).length;
+  const inactiveCount = brandClients.filter((c) => c.isActive === false).length;
+
+  const filteredClients = brandClients.filter((c) => {
+    if (statusFilter === "active") return c.isActive !== false;
+    if (statusFilter === "inactive") return c.isActive === false;
+    return true;
   });
 
   const handleOpenEdit = (client: any) => {
@@ -283,7 +294,7 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
       setEditingClient(null);
       
       // Update local clients array
-      const updatedRes = await fetch("/api/clients");
+      const updatedRes = await fetch("/api/clients?includeInactive=true");
       const updatedJson = await updatedRes.json();
       if (updatedJson.success) {
         setClients(updatedJson.data);
@@ -313,6 +324,58 @@ export function ClientsClientPage({ initialClients = [], brands = [], filterBran
         <Button onClick={handleOpenAddClient} className="bg-slate-900 text-white hover:bg-slate-800">
           ＋ Add Client
         </Button>
+      </div>
+
+      {/* Status Filter Tabs */}
+      <div className="flex gap-2 border-b border-gray-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("active")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+            statusFilter === "active"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Active Clients
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+            statusFilter === "active" ? "bg-slate-700 text-white" : "bg-slate-200 text-slate-700"
+          }`}>
+            {activeCount}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("inactive")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+            statusFilter === "inactive"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Inactive / Deactivated
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+            statusFilter === "inactive" ? "bg-slate-700 text-white" : "bg-slate-200 text-slate-700"
+          }`}>
+            {inactiveCount}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+            statusFilter === "all"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          All Clients
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+            statusFilter === "all" ? "bg-slate-700 text-white" : "bg-slate-200 text-slate-700"
+          }`}>
+            {brandClients.length}
+          </span>
+        </button>
       </div>
 
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">

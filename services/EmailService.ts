@@ -595,4 +595,70 @@ export class EmailService {
     `);
     await this.send(opts.recipientEmail, "Your Profile Details Have Been Updated", html);
   }
+
+  // ── Password Reset OTP ────────────────────────────────────────────────────
+  static async sendPasswordResetOtp(opts: {
+    recipientEmail: string;
+    recipientName?: string;
+    otp: string;
+    expiresInMinutes?: number;
+  }) {
+    const minutes = opts.expiresInMinutes || 10;
+    const name = opts.recipientName || "there";
+
+    const html = layout("Password Reset Verification Code", `
+      <p style="margin: 0 0 16px;">Hello <strong>${name}</strong>,</p>
+      <p style="margin: 0 0 16px;">We received a request to reset your password for your <strong>Kodewise WorkOS</strong> account.</p>
+      <p style="margin: 0 0 20px;">Use the 6-digit verification code below to complete the password reset process:</p>
+      
+      <div style="text-align: center; margin: 28px 0;">
+        <div style="display: inline-block; background: linear-gradient(135deg, #f0f7ff 0%, #e0f2fe 100%); border: 2px dashed #0284c7; border-radius: 12px; padding: 18px 36px;">
+          <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0369a1;">
+            ${opts.otp}
+          </span>
+        </div>
+        <p style="margin: 12px 0 0; color: #64748b; font-size: 13px;">
+          ⏳ This verification code will expire in <strong>${minutes} minutes</strong>.
+        </p>
+      </div>
+
+      <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; margin: 24px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #92400e; font-size: 13px; font-weight: 500;">
+          <strong>Security Notice:</strong> If you did not request a password reset, please ignore this email or contact your administrator immediately. Never share this code with anyone.
+        </p>
+      </div>
+    `);
+
+    await this.send(opts.recipientEmail, `Password Reset Verification Code: ${opts.otp}`, html);
+  }
+
+  // ── Password Reset Confirmation ───────────────────────────────────────────
+  static async sendPasswordResetConfirmation(opts: {
+    recipientEmail: string;
+    recipientName?: string;
+  }) {
+    const name = opts.recipientName || "there";
+
+    const html = layout("Password Successfully Changed", `
+      <p style="margin: 0 0 16px;">Hello <strong>${name}</strong>,</p>
+      <p style="margin: 0 0 16px;">This is a confirmation that your password for <strong>Kodewise WorkOS</strong> has been successfully changed.</p>
+      
+      <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin: 24px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #166534; font-size: 13px; font-weight: 500;">
+          Your account security has been updated. You can now log in using your new credentials.
+        </p>
+      </div>
+
+      <div>
+        <a href="${BASE_URL}/login" style="${BTN_STYLE}">Go to Login &rarr;</a>
+      </div>
+
+      <p style="margin: 24px 0 0; color: #64748b; font-size: 13px;">
+        If you did not perform this change, please contact your workspace Team Leader immediately to secure your account.
+      </p>
+    `);
+
+    await this.send(opts.recipientEmail, "Security Alert: Password Successfully Changed", html);
+  }
 }
+

@@ -40,12 +40,20 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
+                <a
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 hover:underline transition-colors"
+                >
+                  Forgot password?
+                </a>
+              </div>
               <input
                 id="password"
                 name="password"
@@ -63,13 +71,13 @@ export default function LoginPage() {
               type="submit"
               aria-disabled={isPending}
               disabled={isPending}
-              className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
+              className="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 transition-colors shadow-sm"
             >
               {isPending ? "Signing in..." : "Sign in"}
             </button>
           </div>
           {errorMessage && (
-            <div className="text-sm text-red-500 text-center font-medium">
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2.5 text-center font-medium">
               {errorMessage}
             </div>
           )}

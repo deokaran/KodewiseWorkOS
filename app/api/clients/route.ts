@@ -10,9 +10,10 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const brand = searchParams.get("brand") || undefined;
+  const includeInactive = searchParams.get("includeInactive") === "true";
 
   try {
-    const clients = await ClientService.list(brand);
+    const clients = await ClientService.list(brand, includeInactive);
     return Response.json({ success: true, data: clients });
   } catch (error: any) {
     return Response.json({ success: false, error: error.message || "Failed to list clients" }, { status: 500 });

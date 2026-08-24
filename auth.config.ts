@@ -8,9 +8,12 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isLoginRoute = nextUrl.pathname.startsWith('/login');
+      const isPublicAuthRoute =
+        nextUrl.pathname.startsWith('/login') ||
+        nextUrl.pathname.startsWith('/forgot-password') ||
+        nextUrl.pathname.startsWith('/reset-password');
 
-      if (isLoginRoute) {
+      if (isPublicAuthRoute) {
         if (isLoggedIn) {
           const role = auth.user.role;
           if (role === 'TEAM_LEADER') return Response.redirect(new URL('/tl', nextUrl));
@@ -22,6 +25,7 @@ export const authConfig = {
       if (!isLoggedIn) {
         return false;
       }
+
 
       // Role based protection
       const isTlRoute = nextUrl.pathname.startsWith('/tl');

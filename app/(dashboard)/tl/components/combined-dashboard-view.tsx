@@ -34,9 +34,11 @@ export function CombinedDashboardView({
   handleOpenEditTicket,
   handleOpenEditLog,
 }: CombinedDashboardViewProps) {
-  // Slice to 5 clients each as requested
-  const visibleKwClients = kwClients.slice(0, 5);
-  const visibleFcClients = fcClients.slice(0, 5);
+  // Slice to 5 active clients each as requested
+  const activeKwClients = kwClients.filter((c) => c.isActive !== false);
+  const activeFcClients = fcClients.filter((c) => c.isActive !== false);
+  const visibleKwClients = activeKwClients.slice(0, 5);
+  const visibleFcClients = activeFcClients.slice(0, 5);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -45,9 +47,9 @@ export function CombinedDashboardView({
         <Card className="border-l-4 border-l-indigo-600">
           <CardContent className="pt-6">
             <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Kodewise Clients</div>
-            <div className="text-4xl font-bold text-gray-900 font-heading mt-2">{kwClients.length}</div>
+            <div className="text-4xl font-bold text-gray-900 font-heading mt-2">{activeKwClients.length}</div>
             <div className="text-xs text-gray-500 mt-1">
-              {kwClients.filter((c) => c.status?.startsWith("Beta")).length} active beta stages
+              {activeKwClients.filter((c) => c.status?.startsWith("Beta")).length} active beta stages
             </div>
           </CardContent>
         </Card>
@@ -56,9 +58,9 @@ export function CombinedDashboardView({
           <CardContent className="pt-6 flex justify-between items-center">
             <div>
               <div className="text-sm font-semibold uppercase tracking-wider text-gray-500">Football Counter Clients</div>
-              <div className="text-4xl font-bold text-gray-900 font-heading mt-2">{fcClients.length}</div>
+              <div className="text-4xl font-bold text-gray-900 font-heading mt-2">{activeFcClients.length}</div>
               <div className="text-xs text-gray-500 mt-1">
-                Targeting {fcClients.reduce((sum, c) => sum + (c.post || 0) + (c.reel || 0), 0)} weekly posts
+                Targeting {activeFcClients.reduce((sum, c) => sum + (c.post || 0) + (c.reel || 0), 0)} weekly posts
               </div>
             </div>
             <CircularProgress value={publishedFcTicketsCount} max={fcWeeklyTarget} color="#f97316" size={54} />
@@ -162,10 +164,10 @@ export function CombinedDashboardView({
                 </tbody>
               </table>
             </CardContent>
-            {kwClients.length > 5 && (
+            {activeKwClients.length > 5 && (
               <div className="p-3 bg-gray-50/50 border-t flex justify-end px-6">
                 <Link href="/tl/clients" className="text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg px-3 py-1.5 border border-transparent transition">
-                  View More Clients ({kwClients.length - 5} remaining)
+                  View More Clients ({activeKwClients.length - 5} remaining)
                 </Link>
               </div>
             )}
@@ -222,10 +224,10 @@ export function CombinedDashboardView({
                 </tbody>
               </table>
             </CardContent>
-            {fcClients.length > 5 && (
+            {activeFcClients.length > 5 && (
               <div className="p-3 bg-gray-50/50 border-t flex justify-end px-6">
                 <Link href="/tl/clients" className="text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg px-3 py-1.5 border border-transparent transition">
-                  View More Clients ({fcClients.length - 5} remaining)
+                  View More Clients ({activeFcClients.length - 5} remaining)
                 </Link>
               </div>
             )}
